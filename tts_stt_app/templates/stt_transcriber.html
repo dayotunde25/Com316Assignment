@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %} {# For STTForm, if it has more fields later #}
+
+{% block title %}Speech-to-Text - TTS/STT App{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-10 offset-md-1">
+    <h2>Speech-to-Text (STT)</h2>
+    <p>Upload an audio file (e.g., .mp3, .wav, .m4a) to transcribe it into text. Microphone recording will be added soon.</p>
+
+    {# Part 1: File Upload Form #}
+    <div class="card mt-3">
+      <div class="card-header">
+        Upload Audio File
+      </div>
+      <div class="card-body">
+        <form method="POST" enctype="multipart/form-data" action="{{ url_for('stt.transcribe') }}">
+          {{ form.csrf_token }} {# Assuming STTForm will have CSRF token from Flask-WTF #}
+          <div class="mb-3">
+            <label for="audio_file" class="form-label">Select Audio File</label>
+            <input type="file" class="form-control" name="audio_file" id="audio_file" accept=".wav,.mp3,.m4a,.ogg,.flac,.aac" required>
+            {% if form.audio_file and form.audio_file.errors %}
+                {% for error in form.audio_file.errors %}
+                    <span class="text-danger">{{ error }}</span><br>
+                {% endfor %}
+            {% endif %}
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              {{ form.stt_engine.label(class="form-label") }}
+              {{ form.stt_engine(class="form-select", id="stt_engine_select") }}
+              {% if form.stt_engine.errors %}
+                  {% for error in form.stt_engine.errors %}
+                      <span class="text-danger">{{ error }}</span><br>
+                  {% endfor %}
+              {% endif %}
+            </div>
+            <div class="col-md-6 mb-3" id="vosk_language_select_div" style="display: none;">
+              {{ form.vosk_language.label(class="form-label") }}
+              {{ form.vosk_language(class="form-select") }}
+              {% if form.vosk_language.errors %}
+                  {% for error in form.vosk_language.errors %}
+                      <span class="text-danger">{{ error }}</span><br>
+                  {% endfor %}
+              {% endif %}
+            </div>
+          </div>
+          <button type="submit" name="submit_upload" class="btn btn-primary">Transcribe Uploaded File</button>
+        </form>
+      </div>
+    </div>
+
+    {# Part 2: Microphone Recording (Placeholder) - Will be implemented with JavaScript #}
+    <div class="card mt-4">
+        <div class="card-header">
+            Record Audio from Microphone (Coming Soon)
+        </div>
+        <div class="card-body">
+            <button id="startRecordButton" class="btn btn-info me-2" disabled>Start Recording</button>
+            <button id="stopRecordButton" class="btn btn-danger me-2" disabled>Stop Recording</button>
+            <button id="sendRecordButton" class="btn btn-success" disabled>Send Recording for Transcription</button>
+            <audio id="audioPlayback" controls class="mt-2 d-none"></audio>
+            <p id="recordingStatus" class="mt-2"></p>
+        </div>
+    </div>
+
+
+    {# Part 3: Display Transcribed Text and Download Options #}
+    {% if result_text_available and text_form.transcribed_text.data %}
+    <div class="card mt-4">
+      <div class="card-header">
+        Transcription Result
+      </div>
+      <div class="card-body">
+        <form method="POST"> {# This form isn't actually submitting, just for layout with WTForms #}
+            {{ text_form.csrf_token }}
+            <div class="mb-3">
+                {{ text_form.transcribed_text.label(class="form-label") }}
+                {{ text_form.transcribed_text(class="form-control", rows=10, readonly=True) }}
+            </div>
+            <a href="{{ url_for('stt.download_stt_text', type='txt', filename=txt_filename) }}" class="btn btn-success">Download as .txt</a>
+            <a href="{{ url_for('stt.download_stt_text', type='pdf', filename=txt_filename) }}" class="btn btn-danger">Download as .pdf</a>
+            {# The filename for PDF download should point to the .txt file; the route will handle .pdf generation #}
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <hr class="my-4">
+    <a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{# JavaScript for microphone recording will go here #}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Basic placeholder for microphone functionality
+    const startRecordButton = document.getElementById('startRecordButton');
+    const stopRecordButton = document.getElementById('stopRecordButton');
+    const sendRecordButton = document.getElementById('sendRecordButton');
+    const audioPlayback = document.getElementById('audioPlayback');
+    const recordingStatus = document.getElementById('recordingStatus');
+    let mediaRecorder;
+    let audioChunks = [];
+
+    // STT Engine Choice
+    const sttEngineSelect = document.getElementById('stt_engine_select');
+    const voskLanguageSelectDiv = document.getElementById('vosk_language_select_div');
+
+    function toggleVoskLanguageSelect() {
+        if (sttEngineSelect.value === 'vosk') {
+            voskLanguageSelectDiv.style.display = 'block';
+        } else {
+            voskLanguageSelectDiv.style.display = 'none';
+        }
+    }
+
+    // Initial check on page load
+    if(sttEngineSelect) {
+      toggleVoskLanguageSelect();
+      sttEngineSelect.addEventListener('change', toggleVoskLanguageSelect);
+    }
+
+
+    // Microphone recording placeholder
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        // console.log('getUserMedia supported.'); // Keep console logs minimal unless debugging
+        if(startRecordButton) startRecordButton.disabled = false;
+    } else {
+        console.log('getUserMedia not supported on your browser!');
+        if(recordingStatus) recordingStatus.textContent = 'Microphone recording is not supported by your browser.';
+    }
+
+    if(startRecordButton) startRecordButton.onclick = async () => {
+        if(recordingStatus) recordingStatus.textContent = "Microphone recording feature is under development.";
+    };
+    if(stopRecordButton) stopRecordButton.onclick = () => {};
+    if(sendRecordButton) sendRecordButton.onclick = () => {};
+});
+</script>
+{% endblock %}

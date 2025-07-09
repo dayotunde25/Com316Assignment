@@ -1,0 +1,14 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+Flask-WTF
+Flask-Bootstrap5
+Werkzeug
+bcrypt
+email_validator
+pyttsx3
+pydub
+openai-whisper
+fpdf2
+vosk
+# reportlab (alternative for PDF export)
