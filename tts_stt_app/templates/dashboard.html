@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - TTS/STT App{% endblock %}
+
+{% block content %}
+<h2>Dashboard</h2>
+<p>Welcome, {{ current_user.name }}!</p>
+
+<div class="row mt-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Text-to-Speech (TTS)</h5>
+        <p class="card-text">Convert text into spoken audio.</p>
+        <a href="{{ url_for('tts.convert') }}" class="btn btn-primary">Go to TTS</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Speech-to-Text (STT)</h5>
+        <p class="card-text">Transcribe audio into text.</p>
+        <a href="{{ url_for('stt.transcribe') }}" class="btn btn-primary">Go to STT</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 class="mt-5">Conversion History</h3>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th scope="col">ID</th>
+      <th scope="col">Type</th>
+      <th scope="col">Language</th>
+      <th scope="col">Input/Output</th>
+      <th scope="col">Timestamp</th>
+      <th scope="col">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% if logs %}
+      {% for log in logs %}
+      <tr>
+        <td>{{ log.id }}</td>
+        <td>{{ log.type }}</td>
+        <td>{{ log.language }}</td>
+        <td>
+          {% if log.type == 'TTS' %}
+            Input Text: {{ log.input_text[:50] }}{% if log.input_text|length > 50 %}...{% endif %}<br>
+            File: {{ log.output_filename }}
+          {% elif log.type == 'STT' %}
+            File: {{ log.output_filename }}
+          {% endif %}
+        </td>
+        <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+        <td>
+          {% if log.type == 'TTS' %}
+            {# Play button: Needs a way to play audio. Could link to a player page or use JS #}
+            {# For simplicity, direct download link can serve as "Play/View" for TTS audio #}
+            <a href="{{ url_for('static', filename='audio/' + current_user.id|string + '/' + log.output_filename) }}" target="_blank" class="btn btn-sm btn-info mb-1">Play/View</a>
+            <a href="{{ url_for('tts.download_tts_audio', filename=log.output_filename) }}" class="btn btn-sm btn-success mb-1">Download</a>
+          {% elif log.type == 'STT' %}
+            {# View button: Link to view the text. Maybe a modal or a simple text display page? #}
+            {# For now, download .txt serves as "View" #}
+            <a href="{{ url_for('stt.download_stt_text', type='txt', filename=log.output_filename) }}" class="btn btn-sm btn-info mb-1">View .txt</a>
+            <a href="{{ url_for('stt.download_stt_text', type='pdf', filename=log.output_filename) }}" class="btn btn-sm btn-primary mb-1">DL .pdf</a>
+          {% endif %}
+          <form method="POST" action="{{ url_for('delete_log', log_id=log.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this log and its associated file?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="btn btn-sm btn-danger mb-1">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    {% else %}
+      <tr>
+        <td colspan="6" class="text-center">No conversions yet.</td>
+      </tr>
+    {% endif %}
+  </tbody>
+</table>
+
+<!-- Modal for displaying STT text -->
+<div class="modal fade" id="viewTextModal" tabindex="-1" aria-labelledby="viewTextModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="viewTextModalLabel">Transcribed Text</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <pre id="modalTextContent" style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+function viewTextContent(logId, filename) {
+    // This function would fetch the text content via AJAX and display it in the modal.
+    // For simplicity, direct download is used above. A full implementation would be:
+    // fetch(`/stt/get_text_content/${filename}`) // Create this route
+    // .then(response => response.text())
+    // .then(text => {
+    //     document.getElementById('modalTextContent').textContent = text;
+    //     var myModal = new bootstrap.Modal(document.getElementById('viewTextModal'));
+    //     myModal.show();
+    // })
+    // .catch(error => console.error('Error fetching text content:', error));
+    alert("Viewing text content directly in a modal requires an AJAX call and a dedicated route. For now, please use the 'View .txt' button to download and view.");
+}
+</script>
+{% endblock %}

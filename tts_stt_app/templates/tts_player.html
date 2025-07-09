@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block title %}Text-to-Speech - TTS/STT App{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-8 offset-md-2">
+    <h2>Text-to-Speech (TTS)</h2>
+    <p>Enter text below and select a language to convert it into speech.</p>
+
+    <form method="POST" action="{{ url_for('tts.convert') }}">
+      {{ form.csrf_token }}
+      <div class="mb-3">
+        {{ form.text.label(class="form-label") }}
+        {{ form.text(class="form-control", rows=5) }}
+        {% if form.text.errors %}
+            {% for error in form.text.errors %}
+                <span class="text-danger">{{ error }}</span><br>
+            {% endfor %}
+        {% endif %}
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          {{ form.language.label(class="form-label") }}
+          {{ form.language(class="form-select") }}
+          {% if form.language.errors %}
+              {% for error in form.language.errors %}
+                  <span class="text-danger">{{ error }}</span><br>
+              {% endfor %}
+          {% endif %}
+        </div>
+        <div class="col-md-6 mb-3">
+          {{ form.tts_engine.label(class="form-label") }}
+          {{ form.tts_engine(class="form-select", id="tts_engine_select") }}
+          {% if form.tts_engine.errors %}
+              {% for error in form.tts_engine.errors %}
+                  <span class="text-danger">{{ error }}</span><br>
+              {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+      {# Placeholder for Festival voice selection if added later
+      <div class="mb-3" id="festival_voice_select_div" style="display: none;">
+        {{ form.festival_voice.label(class="form-label") }}
+        {{ form.festival_voice(class="form-select") }}
+      </div>
+      #}
+      {{ form.submit(class="btn btn-primary") }}
+    </form>
+
+    {% if audio_file_url %}
+    <div class="mt-4">
+      <h4>Generated Speech:</h4>
+      <audio controls src="{{ audio_file_url }}" class="mt-2">
+        Your browser does not support the audio element.
+      </audio>
+      <p class="mt-2">
+        <a href="{{ url_for('tts.download_tts_audio', filename=filename) }}" class="btn btn-success">Download {{ filename }}</a>
+      </p>
+    </div>
+    {% endif %}
+
+    <hr class="my-4">
+    <a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+{# Add any specific JS for TTS page here if needed #}
+{% endblock %}
